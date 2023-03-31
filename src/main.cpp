@@ -1,7 +1,20 @@
 #include <ESP8266WiFi.h>
 #include <Ticker.h>
 #include <AsyncMqttClient.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
+//Screen
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+const int currentMenu = 0;
+// 0 Temp
+int currentTemp = 0;
+int lastTemp = 0;
+//Wifi
 #define WIFI_SSID "TP-Link_165C"
 #define WIFI_PASSWORD "99368319"
 
@@ -94,6 +107,7 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
   }
   if(strcmp(topic, MQTT_SUB_TEMP) == 0){
     Serial.println(messagePayload);
+    currentTemp = messagePayload.toInt();
   }
 }
 
@@ -113,8 +127,29 @@ void setup() {
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
 
   connectToWifi();
+
+  Serial.println("OLED Test");
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+  display.display();
+  display.setCursor(0,0);
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+
 }
 
 void loop() {
-  
+  if(currentMenu == 0){
+    if(currentTemp != lastTemp){
+      display.clearDisplay();
+      display.setCursor(0,0);
+      display.print("temperature: ");
+      display.setCursor(70, 0);
+      display.print(currentTemp);
+      display.display();
+      lastTemp = currentTemp;
+    }
+  }
 }
