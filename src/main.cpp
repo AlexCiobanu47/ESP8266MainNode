@@ -10,10 +10,13 @@
 #define OLED_RESET -1
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-const int currentMenu = 0;
+int currentMenu = 0;
 // 0 Temp
+// 1 Hum
 int currentTemp = 0;
 int lastTemp = 0;
+int currentHum = 0;
+int lastHum = 0;
 //Wifi
 #define WIFI_SSID "TP-Link_165C"
 #define WIFI_PASSWORD "99368319"
@@ -22,6 +25,7 @@ int lastTemp = 0;
 #define MQTT_PORT 1883
 #define MQTT_SUB_TEST "test"
 #define MQTT_SUB_TEMP "temp"
+#define MQTT_SUB_HUM "hum"
 
 AsyncMqttClient mqttClient;
 Ticker mqttReconnectTimer;
@@ -61,6 +65,9 @@ void onMqttConnect(bool sessionPresent) {
   uint16_t packetIdSubTemp = mqttClient.subscribe(MQTT_SUB_TEMP, 2);
   Serial.print("Subscribing at QoS 2, packetId: ");
   Serial.println(packetIdSubTemp);
+  uint16_t packetIdSubHum = mqttClient.subscribe(MQTT_SUB_HUM, 2);
+  Serial.print("Subscribing at QoS 2, packetId: ");
+  Serial.println(packetIdSubHum);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -109,6 +116,10 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     Serial.println(messagePayload);
     currentTemp = messagePayload.toInt();
   }
+  if(strcmp(topic, MQTT_SUB_HUM) == 0){
+    Serial.println(messagePayload);
+    currentHum = messagePayload.toInt();
+  }
 }
 
 void setup() {
@@ -150,6 +161,17 @@ void loop() {
       display.print(currentTemp);
       display.display();
       lastTemp = currentTemp;
+    }
+  }
+  else if(currentMenu == 1){
+    if(currentHum != lastHum){
+      display.clearDisplay();
+      display.setCursor(0,0);
+      display.print("humidity: ");
+      display.setCursor(62, 0);
+      display.print(currentHum);
+      display.display();
+      lastHum = currentHum;
     }
   }
 }
