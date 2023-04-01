@@ -18,8 +18,10 @@ int lastMenuSwitchValue = 1; //ultima valoare a butonului de la rotary encoder
 // 1 Hum
 int currentTemp = 0;
 int lastTemp = 0;
+String tempString = "temperature";
 int currentHum = 0;
 int lastHum = 0;
+String humString = "humidity";
 //Rotary encoder
 const int menuSwitchPin = 14; //pin pentru butonul de la rotary encoder
 //Wifi
@@ -156,7 +158,15 @@ void setup() {
   display.setTextColor(SSD1306_WHITE);
 
 }
-
+void displayInformation(int valueData, String valueName, int displayXIndex, int displayYIndex){
+  display.clearDisplay();
+      display.setCursor(0,0);
+      display.print(valueName);
+      display.print(": ");
+      display.setCursor(displayXIndex, displayYIndex);
+      display.print(valueData);
+      display.display();
+}
 void loop() {
   //verificare daca s-a apasat butonul de la rotary encoder
   //si avansare prin meniu
@@ -173,21 +183,11 @@ void loop() {
 	}
   lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
-      display.clearDisplay();
-      display.setCursor(0,0);
-      display.print("temperature: ");
-      display.setCursor(70, 0);
-      display.print(currentTemp);
-      display.display();
+      displayInformation(currentTemp, tempString, 70, 0);
       lastTemp = currentTemp;
   }
   else if(currentMenu == 1){
-      display.clearDisplay();
-      display.setCursor(0,0);
-      display.print("humidity: ");
-      display.setCursor(62, 0);
-      display.print(currentHum);
-      display.display();
+      displayInformation(currentHum, humString, 60, 0);
       lastHum = currentHum;
   }
 }
