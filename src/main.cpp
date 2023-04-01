@@ -20,6 +20,8 @@ int lastMenuSwitchValue = 1; //ultima valoare a butonului de la rotary encoder
 // 3 Gas
 int currentTemp = 0;
 String tempString = "temperature";
+int ambientTemp = 26;
+String ambientTempString = "room temperature";
 int currentHum = 0;
 String humString = "humidity";
 int currentLightStatus = 0;
@@ -140,9 +142,21 @@ void IRAM_ATTR rotary_moved(){
   if(interruptTime - lastInterruptTime > 5){
     if(digitalRead(encoderCLKPin) != digitalRead(encoderDTPin)){
       Serial.println("right");
+      if(currentMenu == 0){
+        ambientTemp++;
+      }
+      if(currentMenu == 2){
+        currentLightStatus = 1;
+      }
     }
     else{
       Serial.println("left");
+      if(currentMenu == 0){
+        ambientTemp--;
+      }
+      if(currentMenu == 2){
+        currentLightStatus = 0;
+      }
     }
     lastInterruptTime = interruptTime;
   }
@@ -151,7 +165,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-  //initializare intrerupere
+  //initializare intrerupere encoder
   attachInterrupt(digitalPinToInterrupt(encoderCLKPin), rotary_moved, CHANGE);
   //initializare pini
   pinMode(menuSwitchPin, INPUT_PULLUP);
@@ -168,7 +182,6 @@ void setup() {
 
   connectToWifi();
 
-  Serial.println("OLED Test");
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
   display.display();
   delay(2000);
@@ -179,16 +192,12 @@ void setup() {
   display.setTextColor(SSD1306_WHITE);
 
 }
-void displayInformation(int valueData, String valueName, int displayXIndex, int displayYIndex){
-  display.clearDisplay();
-      display.setCursor(0,0);
-      display.print(valueName);
-      display.print(": ");
-      display.setCursor(displayXIndex, displayYIndex);
-      display.print(valueData);
-      display.display();
+void displayInformation(int valueData, String valueName,int initialXPos, int initialYPos, int displayXIndex, int displayYIndex){
+  display.setCursor(initialXPos,initialYPos);
+  display.print(valueName);
+  display.setCursor(displayXIndex, displayYIndex);
+  display.print(valueData);
 }
-
 void loop() {
   //verificare daca s-a apasat butonul de la rotary encoder
   //si avansare prin meniu
@@ -204,18 +213,27 @@ void loop() {
       }
 	}
   //ROTARY ROTATE
- 
+ Serial.println(currentMenu);
   lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
-      displayInformation(currentTemp, tempString, 70, 0);
+    display.clearDisplay();
+    displayInformation(currentTemp, tempString, 0, 0, 74, 0);
+    displayInformation(ambientTemp, ambientTempString, 0, 16, 104, 16);
+    display.display();
   }
   else if(currentMenu == 1){
-      displayInformation(currentHum, humString, 60, 0);
+    display.clearDisplay();
+    displayInformation(currentHum, humString,0, 0,60, 0);
+    display.display();
   }
   else if(currentMenu == 2){
-    displayInformation(currentLightStatus, lightString, 50, 0);
+    display.clearDisplay();
+    displayInformation(currentLightStatus, lightString,0, 0, 50, 0);
+    display.display();
   }
   else if(currentMenu == 3){
-    displayInformation(currentGasStatus, gasString, 40, 0);
+    display.clearDisplay();
+    displayInformation(currentGasStatus, gasString, 0, 0, 40, 0);
+    display.display();
   }
 }
