@@ -11,17 +11,21 @@
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 int currentMenu = 0;
-const int maxMenuItems = 1;
+const int maxMenuItems = 3;
 int currentMenuSwitchValue = 0; //valoarea curenta a butonului de la rotary encoder
 int lastMenuSwitchValue = 1; //ultima valoare a butonului de la rotary encoder
 // 0 Temp
 // 1 Hum
+// 2 Lights
+// 3 Gas
 int currentTemp = 0;
-int lastTemp = 0;
 String tempString = "temperature";
 int currentHum = 0;
-int lastHum = 0;
 String humString = "humidity";
+int currentLightStatus = 0;
+String lightString = "lights";
+int currentGasStatus = 0;
+String gasString = "gas";
 //Rotary encoder
 const int menuSwitchPin = 14; //pin pentru butonul de la rotary encoder
 //Wifi
@@ -173,7 +177,6 @@ void loop() {
   //cand se ajunge la ultimul tab al meniului se revine la inceput
   currentMenuSwitchValue = digitalRead(menuSwitchPin);
   if (currentMenuSwitchValue == LOW && lastMenuSwitchValue == HIGH) {
-			Serial.println("Button pressed!");
       if(currentMenu == maxMenuItems){
         currentMenu = 0;
       }
@@ -184,10 +187,14 @@ void loop() {
   lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
       displayInformation(currentTemp, tempString, 70, 0);
-      lastTemp = currentTemp;
   }
   else if(currentMenu == 1){
       displayInformation(currentHum, humString, 60, 0);
-      lastHum = currentHum;
+  }
+  else if(currentMenu == 2){
+    displayInformation(currentLightStatus, lightString, 50, 0);
+  }
+  else if(currentMenu == 3){
+    displayInformation(currentGasStatus, gasString, 40, 0);
   }
 }
