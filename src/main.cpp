@@ -11,12 +11,17 @@
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 int currentMenu = 0;
+const int maxMenuItems = 1;
+int currentMenuSwitchValue = 0; //valoarea curenta a butonului de la rotary encoder
+int lastMenuSwitchValue = 1; //ultima valoare a butonului de la rotary encoder
 // 0 Temp
 // 1 Hum
 int currentTemp = 0;
 int lastTemp = 0;
 int currentHum = 0;
 int lastHum = 0;
+//Rotary encoder
+const int menuSwitchPin = 14; //pin pentru butonul de la rotary encoder
 //Wifi
 #define WIFI_SSID "TP-Link_165C"
 #define WIFI_PASSWORD "99368319"
@@ -126,7 +131,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
-
+  //initializare pini
+  pinMode(menuSwitchPin, INPUT_PULLUP);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -152,8 +158,21 @@ void setup() {
 }
 
 void loop() {
+  //verificare daca s-a apasat butonul de la rotary encoder
+  //si avansare prin meniu
+  //cand se ajunge la ultimul tab al meniului se revine la inceput
+  currentMenuSwitchValue = digitalRead(menuSwitchPin);
+  if (currentMenuSwitchValue == LOW && lastMenuSwitchValue == HIGH) {
+			Serial.println("Button pressed!");
+      if(currentMenu == maxMenuItems){
+        currentMenu = 0;
+      }
+      else{
+        currentMenu++;
+      }
+	}
+  lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
-    if(currentTemp != lastTemp){
       display.clearDisplay();
       display.setCursor(0,0);
       display.print("temperature: ");
@@ -161,10 +180,8 @@ void loop() {
       display.print(currentTemp);
       display.display();
       lastTemp = currentTemp;
-    }
   }
   else if(currentMenu == 1){
-    if(currentHum != lastHum){
       display.clearDisplay();
       display.setCursor(0,0);
       display.print("humidity: ");
@@ -172,6 +189,5 @@ void loop() {
       display.print(currentHum);
       display.display();
       lastHum = currentHum;
-    }
   }
 }
