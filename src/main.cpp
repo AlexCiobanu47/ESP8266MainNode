@@ -138,11 +138,11 @@ void IRAM_ATTR rotary_moved(){
   static unsigned long lastInterruptTime = 0;
   unsigned long interruptTime = millis();
   if(interruptTime - lastInterruptTime > 5){
-    if(digitalRead(encoderDTPin) == HIGH){
-      Serial.println("left");
+    if(digitalRead(encoderCLKPin) != digitalRead(encoderDTPin)){
+      Serial.println("right");
     }
     else{
-      Serial.println("right");
+      Serial.println("left");
     }
     lastInterruptTime = interruptTime;
   }
@@ -152,11 +152,10 @@ void setup() {
   Serial.println();
   Serial.println();
   //initializare intrerupere
-  attachInterrupt(digitalPinToInterrupt(encoderCLKPin), rotary_moved, RISING);
+  attachInterrupt(digitalPinToInterrupt(encoderCLKPin), rotary_moved, CHANGE);
   //initializare pini
   pinMode(menuSwitchPin, INPUT_PULLUP);
   pinMode(encoderDTPin, INPUT);
-  pinMode(encoderCLKPin, INPUT);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
