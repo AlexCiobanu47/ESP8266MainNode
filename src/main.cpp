@@ -28,6 +28,8 @@ int currentGasStatus = 0;
 String gasString = "gas";
 //Rotary encoder
 const int menuSwitchPin = 14; //pin pentru butonul de la rotary encoder
+const int encoderDTPin = 12;
+const int encoderCLKPin = 13;
 //Wifi
 #define WIFI_SSID "TP-Link_165C"
 #define WIFI_PASSWORD "99368319"
@@ -104,9 +106,9 @@ void onMqttUnsubscribe(uint16_t packetId) {
 }
 
 void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-  Serial.println("Publish received.");
-  Serial.print("  topic: ");
-  Serial.println(topic);
+  // Serial.println("Publish received.");
+  // Serial.print("  topic: ");
+  // Serial.println(topic);
   // Serial.print("  qos: ");
   // Serial.println(properties.qos);
   // Serial.print("  dup: ");
@@ -124,21 +126,37 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     messagePayload += (char)payload[i];
   }
   if(strcmp(topic, MQTT_SUB_TEMP) == 0){
-    Serial.println(messagePayload);
+    //Serial.println(messagePayload);
     currentTemp = messagePayload.toInt();
   }
   if(strcmp(topic, MQTT_SUB_HUM) == 0){
-    Serial.println(messagePayload);
+    //Serial.println(messagePayload);
     currentHum = messagePayload.toInt();
   }
 }
-
+void IRAM_ATTR rotary_moved(){
+  static unsigned long lastInterruptTime = 0;
+  unsigned long interruptTime = millis();
+  if(interruptTime - lastInterruptTime > 5){
+    if(digitalRead(encoderDTPin) == HIGH){
+      Serial.println("left");
+    }
+    else{
+      Serial.println("right");
+    }
+    lastInterruptTime = interruptTime;
+  }
+}
 void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println();
+  //initializare intrerupere
+  attachInterrupt(digitalPinToInterrupt(encoderCLKPin), rotary_moved, RISING);
   //initializare pini
   pinMode(menuSwitchPin, INPUT_PULLUP);
+  pinMode(encoderDTPin, INPUT);
+  pinMode(encoderCLKPin, INPUT);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -171,10 +189,12 @@ void displayInformation(int valueData, String valueName, int displayXIndex, int 
       display.print(valueData);
       display.display();
 }
+
 void loop() {
   //verificare daca s-a apasat butonul de la rotary encoder
   //si avansare prin meniu
   //cand se ajunge la ultimul tab al meniului se revine la inceput
+  //ROTARY SWITCH
   currentMenuSwitchValue = digitalRead(menuSwitchPin);
   if (currentMenuSwitchValue == LOW && lastMenuSwitchValue == HIGH) {
       if(currentMenu == maxMenuItems){
@@ -184,6 +204,8 @@ void loop() {
         currentMenu++;
       }
 	}
+  //ROTARY ROTATE
+ 
   lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
       displayInformation(currentTemp, tempString, 70, 0);
