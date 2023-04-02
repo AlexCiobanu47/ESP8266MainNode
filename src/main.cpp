@@ -32,6 +32,12 @@ String gasString = "gas";
 const int menuSwitchPin = 14; //pin pentru butonul de la rotary encoder
 const int encoderDTPin = 12;
 const int encoderCLKPin = 13;
+//
+const int light1Pin = 15;
+const int light2Pin = 3;
+//
+int light1State = LOW;
+int light2State = LOW;
 //Wifi
 #define WIFI_SSID "TP-Link_165C"
 #define WIFI_PASSWORD "99368319"
@@ -41,7 +47,8 @@ const int encoderCLKPin = 13;
 #define MQTT_SUB_TEST "test"
 #define MQTT_SUB_TEMP "temp"
 #define MQTT_SUB_HUM "hum"
-
+#define MQTT_SUB_LIGHT1 "light1"
+#define MQTT_SUB_LIGHT2 "light2" 
 AsyncMqttClient mqttClient;
 Ticker mqttReconnectTimer;
 
@@ -83,6 +90,12 @@ void onMqttConnect(bool sessionPresent) {
   uint16_t packetIdSubHum = mqttClient.subscribe(MQTT_SUB_HUM, 2);
   Serial.print("Subscribing at QoS 2, packetId: ");
   Serial.println(packetIdSubHum);
+  uint16_t packetIdSubLight1 = mqttClient.subscribe(MQTT_SUB_LIGHT1, 2);
+  Serial.print("Subscribing at QoS 2, packetId: ");
+  Serial.println(packetIdSubLight1);
+  uint16_t packetIdSubLight2 = mqttClient.subscribe(MQTT_SUB_LIGHT2, 2);
+  Serial.print("Subscribing at QoS 2, packetId: ");
+  Serial.println(packetIdSubLight2);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -135,6 +148,28 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     //Serial.println(messagePayload);
     currentHum = messagePayload.toInt();
   }
+  if(strcmp(topic, MQTT_SUB_LIGHT1) == 0){
+    //Serial.println(messagePayload);
+    Serial.println(messagePayload);
+    if(messagePayload == "off"){
+      light1State = LOW;
+    }
+    else{
+      light1State = HIGH;
+    }
+    digitalWrite(light1Pin, light1State);
+  }
+  if(strcmp(topic, MQTT_SUB_LIGHT2) == 0){
+    //Serial.println(messagePayload);
+    Serial.println(messagePayload);
+    if(messagePayload == "off"){
+      light2State = LOW;
+    }
+    else{
+      light2State = HIGH;
+    }
+    digitalWrite(light2Pin, light2State);
+  }
 }
 void IRAM_ATTR rotary_moved(){
   static unsigned long lastInterruptTime = 0;
@@ -170,6 +205,8 @@ void setup() {
   //initializare pini
   pinMode(menuSwitchPin, INPUT_PULLUP);
   pinMode(encoderDTPin, INPUT);
+  pinMode(light1Pin, OUTPUT);
+  pinMode(light2Pin, OUTPUT);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -213,7 +250,6 @@ void loop() {
       }
 	}
   //ROTARY ROTATE
- Serial.println(currentMenu);
   lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
     display.clearDisplay();
