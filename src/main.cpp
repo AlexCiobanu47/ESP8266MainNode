@@ -11,13 +11,14 @@
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 int currentMenu = 0;
-const int maxMenuItems = 3;
+const int maxMenuItems = 4;
 int currentMenuSwitchValue = 0; //valoarea curenta a butonului de la rotary encoder
 int lastMenuSwitchValue = 1; //ultima valoare a butonului de la rotary encoder
 // 0 Temp
 // 1 Hum
 // 2 Lights
 // 3 Gas
+// 4 Alarm
 int currentTemp = 0;
 String tempString = "temperature";
 int ambientTemp = 26;
@@ -28,6 +29,8 @@ int currentLightStatus = 0;
 String lightString = "lights";
 int currentGasStatus = 0;
 String gasString = "gas";
+int currentAlarmStatus = 0;
+String alarmString = "alarm";
 //Rotary encoder
 const int menuSwitchPin = 14; //pin pentru butonul de la rotary encoder
 const int encoderDTPin = 12;
@@ -35,9 +38,11 @@ const int encoderCLKPin = 13;
 //
 const int light1Pin = 15;
 const int light2Pin = 3;
+const int alarmPin = 10;
 //
 int light1State = LOW;
 int light2State = LOW;
+int buzzerState = LOW;
 //Wifi
 #define WIFI_SSID "TP-Link_165C"
 #define WIFI_PASSWORD "99368319"
@@ -49,6 +54,7 @@ int light2State = LOW;
 #define MQTT_SUB_HUM "hum"
 #define MQTT_SUB_LIGHT1 "light1"
 #define MQTT_SUB_LIGHT2 "light2" 
+#define MQTT_SUB_ALARM "alarm"
 AsyncMqttClient mqttClient;
 Ticker mqttReconnectTimer;
 
@@ -96,6 +102,9 @@ void onMqttConnect(bool sessionPresent) {
   uint16_t packetIdSubLight2 = mqttClient.subscribe(MQTT_SUB_LIGHT2, 2);
   Serial.print("Subscribing at QoS 2, packetId: ");
   Serial.println(packetIdSubLight2);
+  uint16_t packetIdSubAlarm = mqttClient.subscribe(MQTT_SUB_ALARM, 2);
+  Serial.print("Subscribing at QoS 2, packetId: ");
+  Serial.println(packetIdSubAlarm);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
@@ -170,6 +179,18 @@ void onMqttMessage(char* topic, char* payload, AsyncMqttClientMessageProperties 
     }
     digitalWrite(light2Pin, light2State);
   }
+  if(strcmp(topic, MQTT_SUB_ALARM) == 0){
+    //Serial.println(messagePayload);
+    Serial.println(messagePayload);
+    if(messagePayload == "off"){
+      currentAlarmStatus = LOW;
+    }
+    else{
+      currentAlarmStatus = HIGH;
+    }
+    Serial.print("alarm is turned ");
+    Serial.println(currentAlarmStatus);
+  }
 }
 void IRAM_ATTR rotary_moved(){
   static unsigned long lastInterruptTime = 0;
@@ -183,6 +204,9 @@ void IRAM_ATTR rotary_moved(){
       if(currentMenu == 2){
         currentLightStatus = 1;
       }
+      if(currentMenu == 4){
+        currentAlarmStatus = 1;
+      }
     }
     else{
       Serial.println("left");
@@ -191,6 +215,9 @@ void IRAM_ATTR rotary_moved(){
       }
       if(currentMenu == 2){
         currentLightStatus = 0;
+      }
+      if(currentMenu == 4){
+        currentAlarmStatus = 0;
       }
     }
     lastInterruptTime = interruptTime;
@@ -207,6 +234,7 @@ void setup() {
   pinMode(encoderDTPin, INPUT);
   pinMode(light1Pin, OUTPUT);
   pinMode(light2Pin, OUTPUT);
+  pinMode(alarmPin, OUTPUT);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -235,6 +263,14 @@ void displayInformation(int valueData, String valueName,int initialXPos, int ini
   display.setCursor(displayXIndex, displayYIndex);
   display.print(valueData);
 }
+void displayNumber(int posX, int posY, int number){
+  display.setCursor(posX, posY);
+  display.print(number);
+}
+void displayText(int posX, int posY, String text){
+  display.setCursor(posX, posY);
+  display.print(text);
+}
 void loop() {
   //verificare daca s-a apasat butonul de la rotary encoder
   //si avansare prin meniu
@@ -253,23 +289,34 @@ void loop() {
   lastMenuSwitchValue = currentMenuSwitchValue;
   if(currentMenu == 0){
     display.clearDisplay();
-    displayInformation(currentTemp, tempString, 0, 0, 74, 0);
-    displayInformation(ambientTemp, ambientTempString, 0, 16, 104, 16);
+    displayText(0,0, tempString);
+    displayNumber(74, 0, currentTemp);
+    displayText(0, 16, ambientTempString);
+    displayNumber(104, 16, ambientTemp);
     display.display();
   }
   else if(currentMenu == 1){
     display.clearDisplay();
-    displayInformation(currentHum, humString,0, 0,60, 0);
+    displayText(0,0, humString);
+    displayNumber(60, 0, currentHum);
     display.display();
   }
   else if(currentMenu == 2){
     display.clearDisplay();
-    displayInformation(currentLightStatus, lightString,0, 0, 50, 0);
+    displayText(0,0, lightString);
+    displayNumber(50,0, currentLightStatus);
     display.display();
   }
   else if(currentMenu == 3){
     display.clearDisplay();
-    displayInformation(currentGasStatus, gasString, 0, 0, 40, 0);
+    displayText(0,0,gasString);
+    displayNumber(40, 0, currentGasStatus);
+    display.display();
+  }
+  else if(currentMenu == 4){
+    display.clearDisplay();
+    displayText(0,0, alarmString);
+    displayNumber(0, 16, currentAlarmStatus);
     display.display();
   }
 }
