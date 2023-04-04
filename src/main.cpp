@@ -38,7 +38,7 @@ const int encoderCLKPin = 13;
 //
 const int light1Pin = 15;
 const int light2Pin = 3;
-const int alarmPin = 10;
+const int alarmLEDPin = 10;
 //
 int light1State = LOW;
 int light2State = LOW;
@@ -234,7 +234,7 @@ void setup() {
   pinMode(encoderDTPin, INPUT);
   pinMode(light1Pin, OUTPUT);
   pinMode(light2Pin, OUTPUT);
-  pinMode(alarmPin, OUTPUT);
+  pinMode(alarmLEDPin, OUTPUT);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
 
@@ -318,5 +318,11 @@ void loop() {
     displayText(0,0, alarmString);
     displayNumber(0, 16, currentAlarmStatus);
     display.display();
+  }
+  if(currentAlarmStatus == LOW){
+    digitalWrite(alarmLEDPin, LOW);
+  }
+  else{
+    digitalWrite(alarmLEDPin, HIGH);
   }
 }
