@@ -257,12 +257,6 @@ void setup() {
   display.setTextColor(SSD1306_WHITE);
 
 }
-void displayInformation(int valueData, String valueName,int initialXPos, int initialYPos, int displayXIndex, int displayYIndex){
-  display.setCursor(initialXPos,initialYPos);
-  display.print(valueName);
-  display.setCursor(displayXIndex, displayYIndex);
-  display.print(valueData);
-}
 void displayNumber(int posX, int posY, int number){
   display.setCursor(posX, posY);
   display.print(number);
