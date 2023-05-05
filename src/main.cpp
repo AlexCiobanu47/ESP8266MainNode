@@ -280,7 +280,28 @@ void handleNewMessages(int newMessagesCount)
     if(textMessage == "/help"){
       String helpString = "Available commands:\n";
       helpString += "/start\n";
+      helpString += "/temp\n";
+      helpString += "/hum\n";
+      helpString += "/lights";
       bot.sendMessage(CHAT_ID, helpString);
+    }
+    //temp
+    if(textMessage == "/temp"){
+      String botTempString = "Room temperature: ";
+      botTempString += currentTemp;
+      bot.sendMessage(CHAT_ID, botTempString);
+    }
+    //umiditate
+    if(textMessage == "/hum"){
+      String botHumString = "Room humidity: ";
+      botHumString += currentHum;
+      bot.sendMessage(CHAT_ID, botHumString);
+    }
+    //lumini
+    if(textMessage == "/lights"){
+      String botLightString = "Light are: ";
+      botLightString += currentLightStatus;
+      bot.sendMessage(CHAT_ID, botLightString);
     }
   }
 }
