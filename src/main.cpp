@@ -7,11 +7,10 @@
 #include <WiFiClientSecure.h>
 //own headers
 #include "Credentials.h"
+#include "MQTTTopics.h"
+#include "ScreenProperties.h"
 //Screen
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
-#define OLED_RESET -1
-#define SCREEN_ADDRESS 0x3C
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 int currentMenu = 0;
 const int maxMenuItems = 4;
@@ -46,15 +45,7 @@ const int alarmLEDPin = 10;
 int light1State = LOW;
 int light2State = LOW;
 int buzzerState = LOW;
-//Wifi
 
-#define MQTT_PORT 1883
-#define MQTT_SUB_TEST "test"
-#define MQTT_SUB_TEMP "temp"
-#define MQTT_SUB_HUM "hum"
-#define MQTT_SUB_LIGHT1 "light1"
-#define MQTT_SUB_LIGHT2 "light2" 
-#define MQTT_SUB_ALARM "alarm"
 //Telegram
 X509List cert(TELEGRAM_CERTIFICATE_ROOT);
 WiFiClientSecure secured_client;
