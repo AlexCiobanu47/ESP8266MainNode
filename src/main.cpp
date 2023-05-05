@@ -47,6 +47,8 @@ int light2State = LOW;
 int buzzerState = LOW;
 
 //Telegram
+unsigned long lastTimeReceivedMessage = 0;
+const int messageScanTime = 1500;
 X509List cert(TELEGRAM_CERTIFICATE_ROOT);
 WiFiClientSecure secured_client;
 UniversalTelegramBot bot(BOT_TOKEN, secured_client);
@@ -336,9 +338,12 @@ void loop() {
   else{
     digitalWrite(alarmLEDPin, HIGH);
   }
-  int newMessageCount = bot.getUpdates(bot.last_message_received + 1);
-  if(newMessageCount != 0){
-    handleNewMessages(newMessageCount);
+  if(millis() - lastTimeReceivedMessage > messageScanTime){
+    int newMessageCount = bot.getUpdates(bot.last_message_received + 1);
+    while(newMessageCount != 0){
+      handleNewMessages(newMessageCount);
+      newMessageCount = bot.getUpdates(bot.last_message_received + 1);
+    }
+    lastTimeReceivedMessage = millis();
   }
-  
 }
