@@ -3,7 +3,10 @@
 #include <AsyncMqttClient.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
+#include <UniversalTelegramBot.h>
+#include <WiFiClientSecure.h>
+//own headers
+#include "Credentials.h"
 //Screen
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
@@ -44,10 +47,7 @@ int light1State = LOW;
 int light2State = LOW;
 int buzzerState = LOW;
 //Wifi
-#define WIFI_SSID "TP-Link_165C"
-#define WIFI_PASSWORD "99368319"
 
-#define MQTT_HOST IPAddress(192, 168, 0, 105)
 #define MQTT_PORT 1883
 #define MQTT_SUB_TEST "test"
 #define MQTT_SUB_TEMP "temp"
@@ -55,6 +55,11 @@ int buzzerState = LOW;
 #define MQTT_SUB_LIGHT1 "light1"
 #define MQTT_SUB_LIGHT2 "light2" 
 #define MQTT_SUB_ALARM "alarm"
+//Telegram
+X509List cert(TELEGRAM_CERTIFICATE_ROOT);
+WiFiClientSecure secured_client;
+UniversalTelegramBot bot(BOT_TOKEN, secured_client);
+
 AsyncMqttClient mqttClient;
 Ticker mqttReconnectTimer;
 
@@ -74,6 +79,7 @@ void connectToMqtt() {
 
 void onWifiConnect(const WiFiEventStationModeGotIP& event) {
   Serial.println("Connected to Wi-Fi.");
+  configTime(0,0,"pool.ntp.org");
   connectToMqtt();
 }
 
@@ -246,7 +252,7 @@ void setup() {
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
 
   connectToWifi();
-
+  secured_client.setTrustAnchors(&cert);
   display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
   display.display();
   delay(2000);
@@ -255,7 +261,6 @@ void setup() {
   display.setCursor(0,0);
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-
 }
 void displayNumber(int posX, int posY, int number){
   display.setCursor(posX, posY);
@@ -264,6 +269,27 @@ void displayNumber(int posX, int posY, int number){
 void displayText(int posX, int posY, String text){
   display.setCursor(posX, posY);
   display.print(text);
+}
+void handleNewMessages(int newMessagesCount)
+{
+
+  for (int i = 0; i < newMessagesCount; i++)
+  {
+    String chatID = bot.messages[i].chat_id;
+    String textMessage = bot.messages[i].text;
+
+    if (textMessage == "/start")
+    {
+      String welcomeString = "Welcome to Room Monitoring Bot\n";
+      welcomeString += "Type /help to see all available commands";
+      bot.sendMessage(CHAT_ID, welcomeString);
+    }
+    if(textMessage == "/help"){
+      String helpString = "Available commands:\n";
+      helpString += "/start\n";
+      bot.sendMessage(CHAT_ID, helpString);
+    }
+  }
 }
 void loop() {
   //verificare daca s-a apasat butonul de la rotary encoder
@@ -319,4 +345,9 @@ void loop() {
   else{
     digitalWrite(alarmLEDPin, HIGH);
   }
+  int newMessageCount = bot.getUpdates(bot.last_message_received + 1);
+  if(newMessageCount != 0){
+    handleNewMessages(newMessageCount);
+  }
+  
 }
